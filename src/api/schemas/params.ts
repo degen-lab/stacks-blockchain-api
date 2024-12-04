@@ -45,6 +45,18 @@ export const CursorOffsetParam = (args: {
     })
   );
 
+export const TenureHeightParam = (
+  title?: string,
+  description?: string,
+) =>
+  Type.Optional(
+    Type.Integer({
+      minimum: 0,
+      title: title ?? 'Tenure Height',
+      description: description ?? 'Fetch blocks for this tenure height',
+    })
+  );
+
 export const UnanchoredParamSchema = Type.Optional(
   Type.Boolean({
     default: false,

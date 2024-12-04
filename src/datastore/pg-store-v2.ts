@@ -65,11 +65,13 @@ export class PgStoreV2 extends BasePgStoreModule {
     limit: number;
     offset?: number;
     cursor?: string;
+    tenure_height?: number;
   }): Promise<DbCursorPaginatedResult<DbBlock>> {
     return await this.sqlTransaction(async sql => {
       const limit = args.limit;
       const offset = args.offset ?? 0;
       const cursor = args.cursor ?? null;
+      const tenureHeight = args.tenure_height ?? null;
 
       const blocksQuery = await sql<
         (BlockQueryResult & { total: number; next_block_hash: string; prev_block_hash: string })[]
@@ -79,6 +81,7 @@ export class PgStoreV2 extends BasePgStoreModule {
           SELECT *, LEAD(block_height, ${offset}) OVER (ORDER BY block_height DESC) offset_block_height
           FROM blocks
           WHERE canonical = true
+          ${tenureHeight ? sql`AND tenure_height = ${tenureHeight}` : sql``}
           ORDER BY block_height DESC
         )
         SELECT offset_block_height as block_height
@@ -90,6 +93,7 @@ export class PgStoreV2 extends BasePgStoreModule {
         SELECT ${sql(BLOCK_COLUMNS)}
         FROM blocks
         WHERE canonical = true
+        ${tenureHeight ? sql`AND tenure_height = ${tenureHeight}` : sql``}
         AND block_height <= (SELECT block_height FROM cursor_block)
         ORDER BY block_height DESC
         LIMIT ${limit}
@@ -98,6 +102,7 @@ export class PgStoreV2 extends BasePgStoreModule {
         SELECT index_block_hash as prev_block_hash
         FROM blocks
         WHERE canonical = true
+        ${tenureHeight ? sql`AND tenure_height = ${tenureHeight}` : sql``}
         AND block_height < (
           SELECT block_height
           FROM selected_blocks
@@ -112,6 +117,7 @@ export class PgStoreV2 extends BasePgStoreModule {
         SELECT index_block_hash as next_block_hash
         FROM blocks
         WHERE canonical = true
+        ${tenureHeight ? sql`AND tenure_height = ${tenureHeight}` : sql``}
         AND block_height > (
           SELECT block_height
           FROM selected_blocks
@@ -173,52 +179,6 @@ export class PgStoreV2 extends BasePgStoreModule {
       if (blockCheck.count === 0)
         throw new InvalidRequestError(
           `Burn block not found`,
-          InvalidRequestErrorType.invalid_param
-        );
-
-      const blocksQuery = await sql<(BlockQueryResult & { total: number })[]>`
-        WITH block_count AS (
-          SELECT COUNT(*) AS count FROM blocks WHERE canonical = TRUE AND ${filter}
-        )
-        SELECT
-          ${sql(BLOCK_COLUMNS)},
-          (SELECT count FROM block_count)::int AS total
-        FROM blocks
-        WHERE canonical = true AND ${filter}
-        ORDER BY block_height DESC
-        LIMIT ${limit}
-        OFFSET ${offset}
-      `;
-      if (blocksQuery.count === 0)
-        return {
-          limit,
-          offset,
-          results: [],
-          total: 0,
-        };
-      const blocks = blocksQuery.map(b => parseBlockQueryResult(b));
-      return {
-        limit,
-        offset,
-        results: blocks,
-        total: blocksQuery[0].total,
-      };
-    });
-  }
-
-  async getBlocksByTenureHeight(args: {
-    height: number;
-    limit?: number;
-    offset?: number;
-  }): Promise<DbPaginatedResult<DbBlock>> {
-    return await this.sqlTransaction(async sql => {
-      const limit = args.limit ?? BlockLimitParamSchema.default;
-      const offset = args.offset ?? 0;
-      const filter = sql`tenure_height = ${args.height}`;
-      const blockCheck = await sql`SELECT burn_block_hash FROM blocks WHERE ${filter} LIMIT 1`;
-      if (blockCheck.count === 0)
-        throw new InvalidRequestError(
-          `Tenure height not found`,
           InvalidRequestErrorType.invalid_param
         );
 
