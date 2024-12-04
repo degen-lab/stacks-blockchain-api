@@ -81,7 +81,7 @@ export class PgStoreV2 extends BasePgStoreModule {
           SELECT *, LEAD(block_height, ${offset}) OVER (ORDER BY block_height DESC) offset_block_height
           FROM blocks
           WHERE canonical = true
-          ${tenureHeight ? sql`AND tenure_height = ${tenureHeight}` : sql``}
+          ${tenureHeight ? `AND tenure_height = ${tenureHeight}` : ``}
           ORDER BY block_height DESC
         )
         SELECT offset_block_height as block_height
@@ -93,7 +93,7 @@ export class PgStoreV2 extends BasePgStoreModule {
         SELECT ${sql(BLOCK_COLUMNS)}
         FROM blocks
         WHERE canonical = true
-        ${tenureHeight ? sql`AND tenure_height = ${tenureHeight}` : sql``}
+        ${tenureHeight ? `AND tenure_height = ${tenureHeight}` : ``}
         AND block_height <= (SELECT block_height FROM cursor_block)
         ORDER BY block_height DESC
         LIMIT ${limit}
@@ -102,7 +102,7 @@ export class PgStoreV2 extends BasePgStoreModule {
         SELECT index_block_hash as prev_block_hash
         FROM blocks
         WHERE canonical = true
-        ${tenureHeight ? sql`AND tenure_height = ${tenureHeight}` : sql``}
+        ${tenureHeight ? `AND tenure_height = ${tenureHeight}` : ``}
         AND block_height < (
           SELECT block_height
           FROM selected_blocks
@@ -117,7 +117,7 @@ export class PgStoreV2 extends BasePgStoreModule {
         SELECT index_block_hash as next_block_hash
         FROM blocks
         WHERE canonical = true
-        ${tenureHeight ? sql`AND tenure_height = ${tenureHeight}` : sql``}
+        ${tenureHeight ? `AND tenure_height = ${tenureHeight}` : ``}
         AND block_height > (
           SELECT block_height
           FROM selected_blocks
