@@ -21,6 +21,7 @@ import { createRosettaConstructionRouter } from './routes/rosetta/construction';
 import { ChainID, apiDocumentationUrl } from '../helpers';
 import { InvalidRequestError } from '../errors';
 import { BurnchainRoutes } from './routes/burnchain';
+import { TenureHeightRoutesV2 } from './routes/v2/tenure-heights';
 import { BnsNamespaceRoutes } from './routes/bns/namespaces';
 import { BnsPriceRoutes } from './routes/bns/pricing';
 import { BnsNameRoutes } from './routes/bns/names';
@@ -99,6 +100,7 @@ export const StacksApiRoutes: FastifyPluginAsync<
     async fastify => {
       await fastify.register(BlockRoutesV2, { prefix: '/blocks' });
       await fastify.register(BurnBlockRoutesV2, { prefix: '/burn-blocks' });
+      await fastify.register(TenureHeightRoutesV2, { prefix: '/tenure-height' });
       await fastify.register(SmartContractRoutesV2, { prefix: '/smart-contracts' });
       await fastify.register(MempoolRoutesV2, { prefix: '/mempool' });
       await fastify.register(PoxRoutesV2, { prefix: '/pox' });
