@@ -3711,6 +3711,8 @@ export class PgWriteStore extends PgStore {
     chainTipHeight: number
   ): Promise<ReOrgUpdatedEntities> {
     const updatedEntities = newReOrgUpdatedEntities();
+    const normalisedParentIndexBlockHash = block.parent_index_block_hash.startsWith('0x') ? '\\x' + block.parent_index_block_hash.slice(2) : block.parent_index_block_hash;
+
     // Check if incoming block's parent is canonical
     if (block.block_height > 1) {
       const parentResult = await sql<
@@ -3723,18 +3725,18 @@ export class PgWriteStore extends PgStore {
         SELECT canonical, index_block_hash, parent_index_block_hash
         FROM blocks
         WHERE block_height = ${block.block_height - 1}
-          AND index_block_hash = ${block.parent_index_block_hash}
+          AND index_block_hash = ${normalisedParentIndexBlockHash}
       `;
       if (parentResult.length > 1)
         throw new Error(
           `DB contains multiple blocks at height ${block.block_height - 1} and index_hash ${
-            block.parent_index_block_hash
+            normalisedParentIndexBlockHash
           }`
         );
       if (parentResult.length === 0)
         throw new Error(
           `DB does not contain a parent block at height ${block.block_height - 1} with index_hash ${
-            block.parent_index_block_hash
+            normalisedParentIndexBlockHash
           }`
         );
       // This block builds off a previously orphaned chain. Restore canonical status for this chain.
